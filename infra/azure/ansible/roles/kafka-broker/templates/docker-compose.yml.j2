@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+{% for i in [1, 2, 3] %}
+  kafka{{ i }}:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka{{ i }}
+    ports:
+      - "{{ 9093 + i }}:{{ 9093 + i }}"  # EXTERNAL: 9094, 9095, 9096
+      - "{{ 9090 + i }}:{{ 9090 + i }}"  # INTERNAL: 9091, 9092, 9093
+    environment:
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      KAFKA_NODE_ID: {{ i }}
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      
+      # CONTROLLER 포트를 9093에서 9090으로 변경
+      KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:{{ 9090 + i }},EXTERNAL://0.0.0.0:{{ 9093 + i }},CONTROLLER://0.0.0.0:9090'
+      
+      # 컨트롤러 주소의 포트도 9090으로 변경
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9090,2@kafka2:9090,3@kafka3:9090'
+      
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://{{ broker_internal_ip }}:{{ 9090 + i }},EXTERNAL://{{ broker_public_ip }}:{{ 9093 + i }}'
+      
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT'
+      
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    volumes:
+      - ./data/kafka{{ i }}:/var/lib/kafka/data
+    restart: always
+{% endfor %}

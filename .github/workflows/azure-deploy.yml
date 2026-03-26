@@ -1,0 +1,156 @@
+name: 'Azure Infrastructure Deploy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '실행할 작업을 선택하세요.' # apply: 생성 / destroy: 삭제
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+        - apply
+        - destroy
+
+env:
+  # Azure에 로그인하기 위한 인증 정보
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+  # variables.tf로 밀어 넣을 비밀 정보
+  TF_VAR_public_key: ${{ secrets.AZURE_PUBLIC_KEY }}
+  TF_VAR_onprem_ip: ${{ secrets.ONPREM_SOURCE_IP }}
+
+jobs:
+  build-image:
+    name: 'Build and Push Docker Image'
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.action == 'apply' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Kafka Connect 이미지 빌드
+      - name: Build and Push Kafka Connect Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./infra/azure/ansible/roles/kafka-consumer/templates
+          file: ./infra/azure/ansible/roles/kafka-consumer/templates/Dockerfile.j2
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/custom-kafka-connect:latest
+
+      # 온프레미스 시뮬레이터 이미지 빌드
+      - name: Build and Push On-prem Simulator Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./infra/on-prem
+          file: ./infra/on-prem/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/vehicle-simulator:latest
+
+  terraform-azure:
+    name: 'Terraform Azure'
+    needs: build-image # 빌드가 성공해야 배포 시작
+    if: |
+      github.event.inputs.action == 'destroy' || 
+      (github.event.inputs.action == 'apply' && success())
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infra/azure/terraform
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Apply
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: terraform apply -auto-approve
+
+    # 스토리지 정보 추출 (jq 사용)
+    - name: Get Storage Info from Terraform
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: |
+        STORAGE_NAME=$(terraform output -json azure_storage_account_name | jq -r .)
+        STORAGE_KEY=$(terraform output -json azure_storage_primary_key | jq -r .)
+        echo "AZURE_STORAGE_NAME=${STORAGE_NAME}" >> $GITHUB_ENV
+        echo "AZURE_STORAGE_KEY=${STORAGE_KEY}" >> $GITHUB_ENV
+
+    # SSH 개인 키 설정 (Ansible 접속용)
+    - name: Set up SSH Key
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.AZURE_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    # SSH 서비스 준비 기다림
+    - name: Wait for SSH service to boot
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: sleep 30
+
+    # Inventory 생성
+    - name: Generate Ansible Inventory
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: |
+        BROKER_IP=$(terraform output -json broker_public_ip | jq -r .)
+        CONSUMER_IP=$(terraform output -json consumer_public_ip | jq -r .)
+        VM_USER=$(terraform output -json admin_username | jq -r .)
+
+        echo "Checking IPs: Broker($BROKER_IP), Consumer($CONSUMER_IP)"
+
+        cat <<EOF > azure_hosts.ini
+        [azure_broker]
+        broker-vm ansible_host=${BROKER_IP}
+
+        [azure_consumer]
+        consumer-vm ansible_host=${CONSUMER_IP}
+
+        [azure_vms:children]
+        azure_broker
+        azure_consumer
+
+        [azure_vms:vars]
+        ansible_user=${VM_USER}
+        ansible_ssh_private_key_file=~/.ssh/id_rsa
+        ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        EOF
+
+    # Ansible 실행
+    - name: Run Ansible Playbook
+      if: ${{ github.event.inputs.action == 'apply' }}
+      run: |
+        BROKER_IP=$(terraform output -json broker_public_ip | jq -r .)
+        BROKER_PRIV_IP=$(terraform output -json broker_private_ip | jq -r .)
+
+        ansible-playbook -i azure_hosts.ini ../ansible/playbook.yml \
+          -e "dockerhub_username=${{ secrets.DOCKERHUB_USERNAME }}" \
+          -e "broker_public_ip=${BROKER_IP}" \
+          -e "broker_internal_ip=${BROKER_PRIV_IP}" \
+          -e "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+          -e "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+          -e "aws_region=${{ vars.AWS_REGION }}" \
+          -e "s3_bucket_name=${{ secrets.S3_BUCKET_NAME }}" \
+          -e "azure_storage_account_name=${{ env.AZURE_STORAGE_NAME }}" \
+          -e "azure_storage_primary_key=${{ env.AZURE_STORAGE_KEY }}"
+
+    - name: Terraform Destroy
+      if: ${{ github.event.inputs.action == 'destroy' }}
+      run: terraform destroy -auto-approve

@@ -1,0 +1,25 @@
+---
+# 공통 환경 세팅
+- name: 공통 환경 세팅 (Docker 및 의존성 설치)
+  hosts: azure_vms
+  become: yes
+  gather_facts: yes
+  
+  roles:
+    - docker
+
+# Broker 전용 배포
+- name: Azure Kafka Broker 배포
+  hosts: azure_broker
+  become: yes
+  gather_facts: yes
+  roles:
+    - kafka-broker
+
+# Consumer 전용 배포
+- name: Azure Kafka Consumer 배포
+  hosts: azure_consumer
+  become: yes
+  gather_facts: yes
+  roles:
+    - kafka-consumer

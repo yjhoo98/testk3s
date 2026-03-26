@@ -1,0 +1,856 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 5,
+        "x": 7,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS processed_count_last_5min\r\nFROM vehicle_data_100\r\nWHERE \"timestamp\" >= NOW() - INTERVAL '5 minutes';",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Number of recent transactions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  MAX(\"timestamp\") AS last_update,\r\n  NOW() AS current_time,\r\n  NOW() - MAX(\"timestamp\") AS update_delay\r\nFROM vehicle_data_100\r\nWHERE vehicle_id IN (${vehicle:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false,
+            "minWidth": 200,
+            "wrapHeaderText": false,
+            "wrapText": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "md",
+        "enablePagination": false,
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfgkgxl8mkidcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         lat,\r\n         lon,\r\n         speed,\r\n         engine_on,\r\n         fuel,\r\n         mode,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  CASE\r\n    WHEN engine_on = true AND COALESCE(speed, 0) > 0 THEN '운행 중'\r\n    WHEN engine_on = true AND COALESCE(speed, 0) = 0 THEN '정차'\r\n    WHEN engine_on = false THEN '시동 OFF'\r\n    ELSE '상태 미정'\r\n  END AS vehicle_status,\r\n  speed,\r\n  fuel,\r\n  mode,\r\n  CONCAT(lat, ', ', lon) AS location,\r\n  \"timestamp\" AS last_update\r\nFROM latest\r\nORDER BY vehicle_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "vehicle_data_100"
+        }
+      ],
+      "title": "Summary of overall vehicle status",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "id": 14,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.29,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         speed,\r\n         engine_on,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT '전체 차량 수' AS metric, COUNT(*)::bigint AS num\r\nFROM latest\r\n\r\nUNION ALL\r\n\r\nSELECT '운행 중 차량 수' AS metric, COUNT(*)::bigint AS num\r\nFROM latest\r\nWHERE engine_on = true\r\n  AND COALESCE(speed, 0) > 0\r\n\r\nUNION ALL\r\n\r\nSELECT '정차 차량 수' AS metric, COUNT(*)::bigint AS num\r\nFROM latest\r\nWHERE engine_on = true\r\n  AND COALESCE(speed, 0) = 0\r\n\r\nUNION ALL\r\n\r\nSELECT '시동 OFF 차량 수' AS metric, COUNT(*)::bigint AS num\r\nFROM latest\r\nWHERE engine_on = false;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Num of car",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         lat,\r\n         lon,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n    AND lat IS NOT NULL\r\n    AND lon IS NOT NULL\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  lat,\r\n  lon,\r\n  \"timestamp\" AS last_update\r\nFROM latest\r\nORDER BY vehicle_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Table for vehicle distribution map",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "description": "10minutes",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         speed,\r\n         engine_on,\r\n         fuel,\r\n         mode,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  \"timestamp\" AS last_update,\r\n  NOW() - \"timestamp\" AS delay\r\nFROM latest\r\nWHERE \"timestamp\" < NOW() - INTERVAL '10 minutes'\r\nORDER BY \"timestamp\" ASC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Vehicles that were last updated are old",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         speed,\r\n         engine_on,\r\n         fuel,\r\n         mode,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  CASE\r\n    WHEN engine_on = false THEN '시동 OFF'\r\n    WHEN engine_on = true AND COALESCE(speed, 0) > 0 THEN '운행 중'\r\n    WHEN engine_on = true AND COALESCE(speed, 0) = 0 THEN '정차'\r\n    ELSE '상태 미정'\r\n  END AS vehicle_status,\r\n  fuel,\r\n  mode,\r\n  \"timestamp\" AS last_update\r\nFROM latest\r\nORDER BY fuel ASC NULLS LAST, vehicle_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Fuel/vehicle condition",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "description": "Fuel 20 or less",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 0,
+        "y": 27
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         fuel,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  fuel,\r\n  \"timestamp\" AS last_update\r\nFROM latest\r\nWHERE fuel IS NOT NULL\r\n  AND fuel <= 20\r\nORDER BY fuel ASC, vehicle_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "List of low-fuel vehicles",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfgkgxl8mkidcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 7,
+        "y": 27
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\r\n  SELECT DISTINCT ON (vehicle_id)\r\n         vehicle_id,\r\n         driver_code,\r\n         speed,\r\n         \"timestamp\"\r\n  FROM vehicle_data_100\r\n  WHERE vehicle_id IN (${vehicle:sqlstring})\r\n  ORDER BY vehicle_id, \"timestamp\" DESC\r\n)\r\nSELECT\r\n  vehicle_id,\r\n  driver_code,\r\n  speed\r\nFROM latest\r\nWHERE speed IS NOT NULL\r\nORDER BY speed DESC\r\nLIMIT 10;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "vehicles ordered by speed",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "car_1",
+            "car_2",
+            "car_4",
+            "car_5"
+          ],
+          "value": [
+            "car_1",
+            "car_2",
+            "car_4",
+            "car_5"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfgkgxl8mkidcc"
+        },
+        "definition": "SELECT DISTINCT vehicle_id\r\nFROM vehicle_data_100\r\nORDER BY vehicle_id;",
+        "includeAll": true,
+        "multi": true,
+        "name": "vehicle",
+        "options": [],
+        "query": {
+          "dataset": "vehicletemp",
+          "editorMode": "code",
+          "format": "table",
+          "query": "SELECT DISTINCT vehicle_id\r\nFROM vehicle_data_100\r\nORDER BY vehicle_id;",
+          "rawQuery": true,
+          "rawSql": "SELECT DISTINCT vehicle_id\r\nFROM vehicle_data_100\r\nORDER BY vehicle_id;",
+          "refId": "SQLVariableQueryEditor-VariableQuery",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "vehicle_id",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "vehicle_data_100"
+        },
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "admin",
+  "uid": "adbxdpr",
+  "version": 43,
+  "weekStart": ""
+}
